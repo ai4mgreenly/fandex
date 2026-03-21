@@ -1,0 +1,84 @@
+---
+name: naming
+description: Naming Conventions skill for the fandex project
+---
+
+# Naming Conventions
+
+## Description
+Naming conventions for the fandex C codebase.
+
+## Public Symbol Pattern
+
+All public symbols follow: `fx_MODULE_THING`
+- `fx_` - namespace prefix
+- `MODULE` - single word (config, watcher, index, rpc)
+- `THING` - descriptive name with approved abbreviations
+
+Examples:
+- `fx_cfg_load()` - function
+- `fx_index_entry_t` - type
+- `fx_watcher_shutdown` - global variable
+
+**Module Organization:** One subdirectory = One module. All symbols from a module use the same prefix regardless of file location.
+
+## Approved Abbreviations
+
+MUST use these consistently (types, functions, fields, variables):
+
+| Full Word | Abbrev | Domain |
+|-----------|--------|--------|
+| configuration | `cfg` | Universal |
+| message | `msg` | Universal |
+| context | `ctx` | Universal |
+| connection | `conn` | Networking |
+| request | `req` | HTTP |
+| response | `resp` | HTTP |
+| buffer | `buf` | Universal |
+| length | `len` | Universal |
+| string | `str` | Universal |
+| pointer | `ptr` | Universal |
+| temporary | `tmp` | Universal |
+| error | `err` | Universal |
+| result | `res` | Universal |
+| WebSocket | `ws` | Networking |
+| session | `sess` | Web |
+| correlation | `corr` | Distributed |
+
+## Words That Must NOT Be Abbreviated
+
+Always spell out completely:
+- `handler`, `manager`, `server`, `client`
+- `function`, `parameter`, `shutdown`, `payload`
+- `watcher`, `index`, `socket`
+
+## Special Conventions
+
+**Raw pointers into buffers** use `_ptr` suffix:
+```c
+bool *visible_ptr;         // Raw pointer to external storage
+const char **text_ptr;     // Raw pointer to external string pointer
+```
+
+**Global variables** use `g_` prefix:
+```c
+extern volatile sig_atomic_t g_watcher_shutdown;
+```
+
+**Internal static symbols** don't need `fx_` prefix.
+
+## External Library Wrappers
+
+**DO NOT use `fx_` prefix** - these are link seams for testing.
+
+**Library wrappers** (talloc, yyjson) use **trailing underscore**:
+```c
+talloc_zero_(ctx, size)           // wraps talloc_zero_size()
+yyjson_read_file_(path, flg, ...)  // wraps yyjson_read_file()
+```
+
+**POSIX wrappers** use **`posix_` prefix + trailing underscore**:
+```c
+posix_open_(pathname, flags)      // wraps open()
+posix_write_(fd, buf, count)      // wraps write()
+```
