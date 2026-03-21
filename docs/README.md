@@ -1,3 +1,3 @@
 # Documentation
 
-User documentation for the example application.
+User documentation for fandex.

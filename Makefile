@@ -1,4 +1,4 @@
-# example - Makefile
+# fandex - Makefile
 
 .PHONY: all help clean install fmt
 .DEFAULT_GOAL := all
@@ -155,7 +155,7 @@ include .make/check-helgrind.mk
 # Main binary
 # =============================================================================
 
-bin/example: $(SRC_OBJECTS) $(VENDOR_OBJECTS)
+bin/fandex: $(SRC_OBJECTS) $(VENDOR_OBJECTS)
 	@mkdir -p $(dir $@)
 	@if $(CC) $(LDFLAGS) -o $@ $^ $(LDLIBS) 2>&1; then \
 		echo "🟢 $@"; \
@@ -184,8 +184,8 @@ $(BUILDDIR)/tests/unit/%_test: $(BUILDDIR)/tests/unit/%_test.o $(MODULE_OBJ)
 # all: Build main binary
 all:
 	@$(MAKE) -k -j$(MAKE_JOBS) $(SRC_OBJECTS) $(VENDOR_OBJECTS) 2>&1 | grep -E "^(🟢|🔴)" || true
-	@$(MAKE) -k -j$(MAKE_JOBS) bin/example 2>&1 | grep -E "^(🟢|🔴)" || true
-	@if [ -f bin/example ]; then \
+	@$(MAKE) -k -j$(MAKE_JOBS) bin/fandex 2>&1 | grep -E "^(🟢|🔴)" || true
+	@if [ -f bin/fandex ]; then \
 		echo "✅ Build complete"; \
 	else \
 		echo "❌ Build failed"; \
@@ -207,8 +207,9 @@ clean:
 # install: Install binary to ~/.local/bin
 install: all
 	install -d $(bindir)
-	install -m 755 bin/example $(bindir)/example
-	@echo "Installed to $(bindir)/example"
+	install -m 755 bin/fandex $(bindir)/fandex
+	sudo setcap cap_sys_admin+ep $(bindir)/fandex
+	@echo "Installed to $(bindir)/fandex"
 
 # help: Show available targets
 help:

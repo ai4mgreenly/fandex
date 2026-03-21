@@ -2,7 +2,7 @@
 
 .PHONY: check-link
 
-ALL_BINARIES = bin/example $(UNIT_TEST_BINARIES)
+ALL_BINARIES = bin/fandex $(UNIT_TEST_BINARIES)
 
 check-link:
 ifdef FILE
