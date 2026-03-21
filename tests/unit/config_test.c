@@ -1,0 +1,105 @@
+#include "config/config.h"
+
+#include <check.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+
+START_TEST(test_config_defaults) {
+    unsetenv("FANDEX_WATCH_PATH");
+    unsetenv("FANDEX_DB_PATH");
+    unsetenv("FANDEX_SOCKET_PATH");
+
+    fx_config_t *cfg = fx_config_load();
+    ck_assert_ptr_nonnull(cfg);
+
+    const char *home = getenv("HOME");
+    char expected[512];
+
+    (void)snprintf(expected, sizeof(expected), "%s/projects", home);
+    ck_assert_str_eq(cfg->watch_path, expected);
+
+    (void)snprintf(expected, sizeof(expected), "%s/.local/state/fandex/fandex.db", home);
+    ck_assert_str_eq(cfg->db_path, expected);
+
+    uid_t uid = getuid();
+    (void)snprintf(expected, sizeof(expected), "/run/user/%u/fandex/fandex.sock", uid);
+    ck_assert_str_eq(cfg->socket_path, expected);
+
+    fx_config_free(cfg);
+}
+END_TEST
+
+START_TEST(test_config_env_overrides) {
+    setenv("FANDEX_WATCH_PATH", "/mnt/data/projects", 1);
+    setenv("FANDEX_DB_PATH", "/tmp/test.db", 1);
+    setenv("FANDEX_SOCKET_PATH", "/tmp/test.sock", 1);
+
+    fx_config_t *cfg = fx_config_load();
+    ck_assert_ptr_nonnull(cfg);
+
+    ck_assert_str_eq(cfg->watch_path, "/mnt/data/projects");
+    ck_assert_str_eq(cfg->db_path, "/tmp/test.db");
+    ck_assert_str_eq(cfg->socket_path, "/tmp/test.sock");
+
+    fx_config_free(cfg);
+
+    unsetenv("FANDEX_WATCH_PATH");
+    unsetenv("FANDEX_DB_PATH");
+    unsetenv("FANDEX_SOCKET_PATH");
+}
+END_TEST
+
+START_TEST(test_config_partial_overrides) {
+    unsetenv("FANDEX_WATCH_PATH");
+    setenv("FANDEX_DB_PATH", "/custom/path.db", 1);
+    unsetenv("FANDEX_SOCKET_PATH");
+
+    fx_config_t *cfg = fx_config_load();
+    ck_assert_ptr_nonnull(cfg);
+
+    const char *home = getenv("HOME");
+    char expected[512];
+
+    (void)snprintf(expected, sizeof(expected), "%s/projects", home);
+    ck_assert_str_eq(cfg->watch_path, expected);
+
+    ck_assert_str_eq(cfg->db_path, "/custom/path.db");
+
+    uid_t uid = getuid();
+    (void)snprintf(expected, sizeof(expected), "/run/user/%u/fandex/fandex.sock", uid);
+    ck_assert_str_eq(cfg->socket_path, expected);
+
+    fx_config_free(cfg);
+
+    unsetenv("FANDEX_DB_PATH");
+}
+END_TEST
+
+static Suite *config_suite(void)
+{
+    Suite *s = suite_create("config");
+    TCase *tc = tcase_create("core");
+
+    tcase_add_test(tc, test_config_defaults);
+    tcase_add_test(tc, test_config_env_overrides);
+    tcase_add_test(tc, test_config_partial_overrides);
+    suite_add_tcase(s, tc);
+
+    return s;
+}
+
+int main(void)
+{
+    Suite *s = config_suite();
+    SRunner *sr = srunner_create(s);
+
+    srunner_set_xml(sr, "reports/check/unit/config_test.xml");
+    srunner_run_all(sr, CK_NORMAL);
+    int failed = srunner_ntests_failed(sr);
+    srunner_free(sr);
+
+    return (failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
+}

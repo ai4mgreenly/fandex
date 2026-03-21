@@ -36,7 +36,7 @@ VALGRIND_FLAGS = -O0 -g3 -fno-omit-frame-pointer -DDEBUG
 COVERAGE_FLAGS = -O0 -g3 -fprofile-arcs -ftest-coverage
 
 # Base flags
-BASE_FLAGS = -std=c17 -fPIC -D_GNU_SOURCE -I.
+BASE_FLAGS = -std=c17 -fPIC -D_GNU_SOURCE -Isrc -Ivendor
 
 # Build type selection (debug, release, sanitize, tsan, or valgrind)
 BUILD ?= debug
