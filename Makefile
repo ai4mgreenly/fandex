@@ -208,7 +208,7 @@ clean:
 install: all
 	install -d $(bindir)
 	install -m 755 bin/fandex $(bindir)/fandex
-	sudo setcap cap_sys_admin+ep $(bindir)/fandex
+	sudo setcap cap_sys_admin,cap_dac_read_search+ep $(bindir)/fandex
 	@echo "Installed to $(bindir)/fandex"
 
 # help: Show available targets

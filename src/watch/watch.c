@@ -117,6 +117,8 @@ void process_fan_event(fx_watch_t *w, struct fanotify_event_metadata *meta)
         (struct fanotify_event_info_fid *)(void *)(meta + 1);
 
     if (fid->hdr.info_type != FAN_EVENT_INFO_TYPE_DFID_NAME) {
+        fx_log_warn(w->log, "drop event: unexpected info_type=%u",
+                    (unsigned)fid->hdr.info_type);
         return;
     }
 
@@ -126,16 +128,28 @@ void process_fan_event(fx_watch_t *w, struct fanotify_event_metadata *meta)
     int dir_fd = open_by_handle_at(AT_FDCWD, fh,
                                    O_RDONLY | O_PATH | O_NOFOLLOW | O_CLOEXEC);
     if (dir_fd < 0) {
+        fx_log_warn(w->log, "drop event: open_by_handle_at failed: %s",
+                    strerror(errno));
         return;
     }
 
     char proc_path[64];
     char dir_path[PATH_MAX];
-    (void)snprintf(proc_path, sizeof(proc_path), "/proc/self/fd/%d", dir_fd);
+    int n_fmt = snprintf(proc_path, sizeof(proc_path), "/proc/self/fd/%d", dir_fd);
+    if (n_fmt < 0 || (size_t)n_fmt >= sizeof(proc_path)) {
+        fx_log_warn(w->log, "drop event: snprintf proc_path failed");
+        posix_close_(dir_fd);
+        return;
+    }
     ssize_t n = readlink(proc_path, dir_path, sizeof(dir_path) - 1);
-    close(dir_fd);
+    int readlink_errno = errno;
+    if (posix_close_(dir_fd) < 0) {
+        fx_log_warn(w->log, "close dir_fd failed: %s", strerror(errno));
+    }
 
     if (n <= 0) {
+        fx_log_warn(w->log, "drop event: readlink %s failed: %s",
+                    proc_path, strerror(readlink_errno));
         return;
     }
 
