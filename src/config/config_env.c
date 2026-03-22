@@ -4,6 +4,8 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <sys/types.h>
 
@@ -52,6 +54,23 @@ res_t fx_cfg_env_load(fx_cfg_t *cfg)
     }
     if (!cfg->socket_path) {
         PANIC("Out of memory");
+    }
+
+    const char *log_env = getenv(FX_ENV_LOG_LEVEL);
+    if (log_env) {
+        if (strcasecmp(log_env, "debug") == 0) {
+            cfg->log_level = FX_LOG_DEBUG;
+        } else if (strcasecmp(log_env, "info") == 0) {
+            cfg->log_level = FX_LOG_INFO;
+        } else if (strcasecmp(log_env, "warn") == 0) {
+            cfg->log_level = FX_LOG_WARN;
+        } else if (strcasecmp(log_env, "error") == 0) {
+            cfg->log_level = FX_LOG_ERROR;
+        } else {
+            return ERR(cfg, INVALID_ARG, "fandex: invalid FANDEX_LOG_LEVEL: %s", log_env);
+        }
+    } else {
+        cfg->log_level = FX_DEFAULT_LOG_LEVEL;
     }
 
     return OK(NULL);

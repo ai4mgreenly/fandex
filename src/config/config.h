@@ -5,12 +5,14 @@
 #include <talloc.h>
 
 #include "error.h"
+#include "../log/log.h"
 
 typedef struct fx_cfg {
     char *watch_path;
     char *db_path;
     char *socket_path;
     bool help;
+    fx_log_level_t log_level;
 } fx_cfg_t;
 
 // Load config: env vars override compiled-in defaults; CLI args override env.

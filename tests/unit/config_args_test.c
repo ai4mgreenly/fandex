@@ -1,6 +1,7 @@
 #include "config/config_args.h"
 #include "config/config_env.h"
 #include "config/config.h"
+#include "log/log.h"
 #include <talloc.h>
 
 #include <check.h>
@@ -13,6 +14,7 @@ static fx_cfg_t *base_cfg(void)
     unsetenv("FANDEX_WATCH_PATH");
     unsetenv("FANDEX_DB_PATH");
     unsetenv("FANDEX_SOCKET_PATH");
+    unsetenv("FANDEX_LOG_LEVEL");
     fx_cfg_t *cfg = talloc_zero(NULL, fx_cfg_t);
     if (cfg) {
         fx_cfg_env_load(cfg);
@@ -158,6 +160,33 @@ START_TEST(test_args_missing_value) {
 }
 END_TEST
 
+START_TEST(test_args_log_level_error) {
+    fx_cfg_t *cfg = base_cfg();
+    ck_assert_ptr_nonnull(cfg);
+
+    const char *argv[] = { "fandex", "--log-level", "error" };
+    res_t r = fx_cfg_args_apply(cfg, 3, argv);
+
+    ck_assert(!r.is_err);
+    ck_assert_int_eq(cfg->log_level, FX_LOG_ERROR);
+
+    fx_cfg_free(cfg);
+}
+END_TEST
+
+START_TEST(test_args_log_level_missing_value) {
+    fx_cfg_t *cfg = base_cfg();
+    ck_assert_ptr_nonnull(cfg);
+
+    const char *argv[] = { "fandex", "--log-level" };
+    res_t r = fx_cfg_args_apply(cfg, 2, argv);
+
+    ck_assert(r.is_err);
+
+    fx_cfg_free(cfg);
+}
+END_TEST
+
 static Suite *config_args_suite(void)
 {
     Suite *s = suite_create("config_args");
@@ -172,6 +201,8 @@ static Suite *config_args_suite(void)
     tcase_add_test(tc, test_args_all_three);
     tcase_add_test(tc, test_args_unknown_flag);
     tcase_add_test(tc, test_args_missing_value);
+    tcase_add_test(tc, test_args_log_level_error);
+    tcase_add_test(tc, test_args_log_level_missing_value);
     suite_add_tcase(s, tc);
 
     return s;

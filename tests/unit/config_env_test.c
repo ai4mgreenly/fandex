@@ -1,6 +1,7 @@
 #include "config/config_env.h"
 #include "config/config.h"
 #include "config/defaults.h"
+#include "log/log.h"
 #include <talloc.h>
 
 #include <check.h>
@@ -15,6 +16,7 @@ static void clear_env(void)
     unsetenv("FANDEX_DB_PATH");
     unsetenv("FANDEX_SOCKET_PATH");
     unsetenv("XDG_RUNTIME_DIR");
+    unsetenv("FANDEX_LOG_LEVEL");
 }
 
 START_TEST(test_env_no_vars) {
@@ -159,6 +161,63 @@ START_TEST(test_env_all_three) {
 }
 END_TEST
 
+START_TEST(test_env_no_log_level) {
+    clear_env();
+
+    TALLOC_CTX *ctx = talloc_new(NULL);
+    fx_cfg_t *cfg = talloc_zero(ctx, fx_cfg_t);
+    res_t r = fx_cfg_env_load(cfg);
+    ck_assert(!r.is_err);
+    ck_assert_int_eq(cfg->log_level, FX_LOG_INFO);
+
+    talloc_free(ctx);
+}
+END_TEST
+
+START_TEST(test_env_log_level_warn) {
+    clear_env();
+    setenv("FANDEX_LOG_LEVEL", "warn", 1);
+
+    TALLOC_CTX *ctx = talloc_new(NULL);
+    fx_cfg_t *cfg = talloc_zero(ctx, fx_cfg_t);
+    res_t r = fx_cfg_env_load(cfg);
+    ck_assert(!r.is_err);
+    ck_assert_int_eq(cfg->log_level, FX_LOG_WARN);
+
+    talloc_free(ctx);
+    clear_env();
+}
+END_TEST
+
+START_TEST(test_env_log_level_debug) {
+    clear_env();
+    setenv("FANDEX_LOG_LEVEL", "debug", 1);
+
+    TALLOC_CTX *ctx = talloc_new(NULL);
+    fx_cfg_t *cfg = talloc_zero(ctx, fx_cfg_t);
+    res_t r = fx_cfg_env_load(cfg);
+    ck_assert(!r.is_err);
+    ck_assert_int_eq(cfg->log_level, FX_LOG_DEBUG);
+
+    talloc_free(ctx);
+    clear_env();
+}
+END_TEST
+
+START_TEST(test_env_log_level_invalid) {
+    clear_env();
+    setenv("FANDEX_LOG_LEVEL", "garbage", 1);
+
+    TALLOC_CTX *ctx = talloc_new(NULL);
+    fx_cfg_t *cfg = talloc_zero(ctx, fx_cfg_t);
+    res_t r = fx_cfg_env_load(cfg);
+    ck_assert(r.is_err);
+
+    talloc_free(ctx);
+    clear_env();
+}
+END_TEST
+
 static Suite *config_env_suite(void)
 {
     Suite *s = suite_create("config_env");
@@ -170,6 +229,10 @@ static Suite *config_env_suite(void)
     tcase_add_test(tc, test_env_socket_path);
     tcase_add_test(tc, test_env_xdg_runtime_dir);
     tcase_add_test(tc, test_env_all_three);
+    tcase_add_test(tc, test_env_no_log_level);
+    tcase_add_test(tc, test_env_log_level_warn);
+    tcase_add_test(tc, test_env_log_level_debug);
+    tcase_add_test(tc, test_env_log_level_invalid);
     suite_add_tcase(s, tc);
 
     return s;

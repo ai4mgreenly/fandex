@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <strings.h>
 
 #include "poison.h"
 
@@ -36,6 +37,25 @@ res_t fx_cfg_args_apply(fx_cfg_t *cfg, int argc, const char **argv)
             } else {
                 talloc_free(cfg->socket_path);
                 cfg->socket_path = dup;
+            }
+            continue;
+        }
+
+        if (strcmp(arg, "--log-level") == 0) {
+            if (i + 1 >= argc) {
+                return ERR(cfg, INVALID_ARG, "fandex: --log-level requires a value");
+            }
+            const char *val = argv[++i];
+            if (strcasecmp(val, "debug") == 0) {
+                cfg->log_level = FX_LOG_DEBUG;
+            } else if (strcasecmp(val, "info") == 0) {
+                cfg->log_level = FX_LOG_INFO;
+            } else if (strcasecmp(val, "warn") == 0) {
+                cfg->log_level = FX_LOG_WARN;
+            } else if (strcasecmp(val, "error") == 0) {
+                cfg->log_level = FX_LOG_ERROR;
+            } else {
+                return ERR(cfg, INVALID_ARG, "fandex: invalid --log-level: %s", val);
             }
             continue;
         }
