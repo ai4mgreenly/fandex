@@ -33,8 +33,8 @@ START_TEST(test_args_empty) {
 
     ck_assert(!r.is_err);
     ck_assert(!cfg->help);
-    ck_assert_str_eq(cfg->watch_path,  w);
-    ck_assert_str_eq(cfg->db_path,     d);
+    ck_assert_str_eq(cfg->watch_path, w);
+    ck_assert_str_eq(cfg->db_path, d);
     ck_assert_str_eq(cfg->socket_path, s);
 
     fx_cfg_free(cfg);
@@ -117,15 +117,15 @@ START_TEST(test_args_all_three) {
 
     const char *argv[] = {
         "fandex",
-        "--watch",  "/tmp/w",
-        "--db",     "/tmp/d",
+        "--watch", "/tmp/w",
+        "--db", "/tmp/d",
         "--socket", "/tmp/s"
     };
     res_t r = fx_cfg_args_apply(cfg, 7, argv);
 
     ck_assert(!r.is_err);
-    ck_assert_str_eq(cfg->watch_path,  "/tmp/w");
-    ck_assert_str_eq(cfg->db_path,     "/tmp/d");
+    ck_assert_str_eq(cfg->watch_path, "/tmp/w");
+    ck_assert_str_eq(cfg->db_path, "/tmp/d");
     ck_assert_str_eq(cfg->socket_path, "/tmp/s");
 
     fx_cfg_free(cfg);

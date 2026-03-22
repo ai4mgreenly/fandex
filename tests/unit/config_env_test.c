@@ -122,8 +122,8 @@ START_TEST(test_env_socket_path) {
 END_TEST
 
 START_TEST(test_env_all_three) {
-    setenv("FANDEX_WATCH_PATH",  "/tmp/w", 1);
-    setenv("FANDEX_DB_PATH",     "/tmp/d", 1);
+    setenv("FANDEX_WATCH_PATH", "/tmp/w", 1);
+    setenv("FANDEX_DB_PATH", "/tmp/d", 1);
     setenv("FANDEX_SOCKET_PATH", "/tmp/s", 1);
 
     TALLOC_CTX *ctx = talloc_new(NULL);
@@ -131,8 +131,8 @@ START_TEST(test_env_all_three) {
     res_t r = fx_cfg_env_load(cfg);
     ck_assert(!r.is_err);
 
-    ck_assert_str_eq(cfg->watch_path,  "/tmp/w");
-    ck_assert_str_eq(cfg->db_path,     "/tmp/d");
+    ck_assert_str_eq(cfg->watch_path, "/tmp/w");
+    ck_assert_str_eq(cfg->db_path, "/tmp/d");
     ck_assert_str_eq(cfg->socket_path, "/tmp/s");
 
     talloc_free(ctx);

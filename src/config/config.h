@@ -10,7 +10,7 @@ typedef struct fx_cfg {
     char *watch_path;
     char *db_path;
     char *socket_path;
-    bool  help;
+    bool help;
 } fx_cfg_t;
 
 // Load config: env vars override compiled-in defaults; CLI args override env.

@@ -1,0 +1,37 @@
+#!/usr/bin/env ruby
+# frozen_string_literal: true
+
+#
+# harness/fmt - Formatting check
+#
+# Runs make fmt. Exits 0 on success, 1 on failure.
+#
+
+require 'json'
+
+def main
+  script_dir = File.dirname(File.realpath(__FILE__))
+  project_root = File.expand_path('../../..', script_dir)
+  Dir.chdir(project_root)
+
+  output = ''
+  IO.popen(['make', 'fmt'], err: [:child, :out]) do |io|
+    output = io.read
+  end
+
+  if $?.exitstatus == 0
+    puts JSON.generate(ok: true)
+    exit 0
+  end
+
+  puts JSON.generate(ok: false, items: ['make fmt failed'])
+  exit 1
+end
+
+if __FILE__ == $PROGRAM_NAME
+  begin
+    main
+  rescue Interrupt
+    exit 130
+  end
+end

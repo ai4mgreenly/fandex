@@ -23,6 +23,7 @@ The core quality checks are the default exit gate for all work. Run these in ord
 
 | Script | What it verifies |
 |--------|------------------|
+| `check-fmt` | Code formatting (runs make fmt, checks for diffs) |
 | `check-compile` | Code compiles cleanly |
 | `check-link` | Linker succeeds |
 | `check-filesize` | File size under 16KB |
