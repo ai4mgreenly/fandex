@@ -1,10 +1,10 @@
 #include "config/config.h"
 #include "log/log.h"
+#include "watch/watch.h"
 
 #include <signal.h>
 #include <stdio.h>
 #include <talloc.h>
-#include <unistd.h>
 
 volatile sig_atomic_t g_shutdown = 0;
 
@@ -59,12 +59,20 @@ int main(int argc, char **argv)
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
 
-    fx_log_info(log, "entering main loop");
-    while (!g_shutdown) {
-        usleep(100000);
+    fx_watch_t *w = NULL;
+    res_t wres = fx_watch_init(ctx, log, cfg->watch_path);
+    if (is_err(&wres)) {
+        fx_log_error(log, "watch init failed: %s", wres.err->msg);
+        talloc_free(ctx);
+        return 1;
     }
+    w = wres.ok;
+
+    fx_log_info(log, "entering main loop");
+    fx_watch_run(w);
     fx_log_info(log, "received shutdown signal");
 
+    fx_watch_free(w);
     fx_log_info(log, "fandex stopping");
 
     talloc_free(ctx);
