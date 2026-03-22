@@ -1,4 +1,5 @@
 #include "config/config.h"
+#include "log/log.h"
 
 #include <stdio.h>
 #include <talloc.h>
@@ -27,6 +28,18 @@ int main(int argc, char **argv)
         talloc_free(ctx);
         return 0;
     }
+
+    fx_log_t *log = fx_log_init(ctx, stderr, cfg->log_level);
+
+    const char *level_names[] = {"debug", "info", "warn", "error"};
+
+    fx_log_info(log, "fandex starting");
+    fx_log_info(log, "watch_path=%s", cfg->watch_path);
+    fx_log_info(log, "db_path=%s", cfg->db_path);
+    fx_log_info(log, "socket_path=%s", cfg->socket_path);
+    fx_log_info(log, "log_level=%s", level_names[cfg->log_level]);
+
+    fx_log_info(log, "fandex stopping");
 
     talloc_free(ctx);
     return 0;

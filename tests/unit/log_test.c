@@ -3,6 +3,7 @@
 
 #include <check.h>
 #include <inttypes.h>
+#include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -138,6 +139,72 @@ START_TEST(test_log_debug_level_allows_info) {
 }
 END_TEST
 
+#define TS_NUM_THREADS 8
+#define TS_MSGS_PER_THREAD 100
+
+struct ts_thread_arg {
+    fx_log_t *log;
+    int32_t id;
+};
+
+static void *ts_log_thread(void *arg)
+{
+    struct ts_thread_arg *a = arg;
+    for (int32_t i = 0; i < TS_MSGS_PER_THREAD; i++) {
+        fx_log_info(a->log, "thread=%" PRId32 " seq=%" PRId32, a->id, i);
+    }
+    return NULL;
+}
+
+START_TEST(test_log_thread_safety) {
+    TALLOC_CTX *ctx = talloc_new(NULL);
+    FILE *f = tmpfile();
+    ck_assert_ptr_nonnull(f);
+
+    fx_log_t *log = fx_log_init(ctx, f, FX_LOG_INFO);
+
+    pthread_t threads[TS_NUM_THREADS];
+    struct ts_thread_arg args[TS_NUM_THREADS];
+    for (int32_t i = 0; i < TS_NUM_THREADS; i++) {
+        args[i].log = log;
+        args[i].id = i;
+        pthread_create(&threads[i], NULL, ts_log_thread, &args[i]);
+    }
+    for (int32_t i = 0; i < TS_NUM_THREADS; i++) {
+        pthread_join(threads[i], NULL);
+    }
+
+    fflush(f);
+    fseek(f, 0, SEEK_END);
+    long size = ftell(f);
+    rewind(f);
+    char *out = malloc((size_t)size + 1);
+    ck_assert_ptr_nonnull(out);
+    size_t n = fread(out, 1, (size_t)size, f);
+    out[n] = '\0';
+
+    int32_t line_count = 0;
+    char *p = out;
+    while (*p) {
+        /* Each line must start with a digit (timestamp). */
+        ck_assert(p[0] >= '0' && p[0] <= '9');
+        char *nl = strchr(p, '\n');
+        ck_assert_ptr_nonnull(nl);
+        /* No embedded INFO/WARN/ERROR markers within a single line body. */
+        *nl = '\0';
+        ck_assert_ptr_nonnull(strstr(p, " INFO "));
+        *nl = '\n';
+        line_count++;
+        p = nl + 1;
+    }
+    ck_assert_int_eq(line_count, TS_NUM_THREADS * TS_MSGS_PER_THREAD);
+
+    free(out);
+    fclose(f);
+    talloc_free(ctx);
+}
+END_TEST
+
 #ifdef DEBUG
 START_TEST(test_log_debug_prefix) {
     TALLOC_CTX *ctx = talloc_new(NULL);
@@ -185,6 +252,7 @@ static Suite *log_suite(void)
     tcase_add_test(tc, test_log_level_suppresses_info);
     tcase_add_test(tc, test_log_level_suppresses_warn);
     tcase_add_test(tc, test_log_debug_level_allows_info);
+    tcase_add_test(tc, test_log_thread_safety);
 #ifdef DEBUG
     tcase_add_test(tc, test_log_debug_prefix);
     tcase_add_test(tc, test_log_debug_suppressed_by_info_level);
